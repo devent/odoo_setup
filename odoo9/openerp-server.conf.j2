@@ -1,0 +1,10 @@
+[options]
+; This is the password that allows database operations:
+; admin_passwd = admin
+addons_path = /usr/lib/python2.7/dist-packages/openerp/addons
+auto_reload = True
+data_dir = /var/lib/odoo
+db_host = {{ db.host }}
+db_port = {{ db.port }}
+db_user = {{ db.user }}
+db_password = {{ db.password }}

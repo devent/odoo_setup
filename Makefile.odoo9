@@ -1,0 +1,74 @@
+VERSION := 9.0
+NAME := odoo-9-1
+DB_HOST := postgres-9-4.service.consul.emwork.nttdata.com
+DB_PORT := 5432
+DB_USER := odoo9
+DB_PASSWORD := cai0iB1oon9vequabeithaishooTheej
+PREFIX := /opt/odoo9
+DIRS := $(PREFIX)/config $(PREFIX)/data
+CONFIG := /opt/odoo9/config/openerp-server.conf
+
+include Makefile.vars
+
+define DOCKER_CMD :=
+docker run \
+--name $(NAME) \
+--dns $(container_dns) \
+-e "SERVICE_NAME=$(NAME)" \
+--volumes-from=$(NAME)-data \
+-d \
+odoo:$(VERSION)
+endef
+
+define DOCKER_DATA_CMD :=
+docker run \
+--name $(NAME)-data \
+-u root \
+-v "/opt/odoo9/config:/etc/odoo" \
+-v "/opt/odoo9/data:/var/lib/odoo" \
+odoo:$(VERSION) \
+bash -c "bash -c 'chown -R odoo /var/lib/odoo'"
+endef
+
+include Makefile.help
+include Makefile.functions
+include Makefile.container
+
+.PHONY +: run rerun rm clean test restart bash
+
+setup: create_db create_dirs create_config
+
+run: setup _run_data _run ##@default Starts the container.
+
+rerun: _rerun ##@targets Stops and starts the container.
+
+rm: _rm _rm_data ##@targets Stops and removes the container.
+
+clean: _clean ##@targets Stops and removes the container and removes all created files.
+	sudo rm -rf $(PREFIX)
+
+test: _test ##@targets Tests if the container is running.
+	
+restart: _restart ##@targets Restarts the container.
+
+bash: test _bash ##@targets Executes the bash inside the running container.
+
+create_db:
+	bash -x ./postgresql/create_user.sh postgres-9-4 "$(DB_USER)"; true
+	bash -x ./postgresql/setup_user_pw.sh postgres-9-4 "$(DB_USER)" "$(DB_PASSWORD)"
+	docker exec postgres-9-4 bash -c "echo 'ALTER USER $(DB_USER) CREATEDB' | psql -v ON_ERROR_STOP=1 --username postgres"
+
+create_dirs: $(DIRS)
+
+create_config: $(CONFIG)
+
+$(DIRS):
+	sudo mkdir -p $@
+
+$(CONFIG):
+	echo "db:" > odoo9/openerp-server.conf.yml
+	echo "  host: $(DB_HOST)" >> odoo9/openerp-server.conf.yml
+	echo "  port: $(DB_PORT)" >> odoo9/openerp-server.conf.yml
+	echo "  user: $(DB_USER)" >> odoo9/openerp-server.conf.yml
+	echo "  password: $(DB_PASSWORD)" >> odoo9/openerp-server.conf.yml
+	sudo bash -c 'j2 odoo9/openerp-server.conf.j2 odoo9/openerp-server.conf.yml > $@'

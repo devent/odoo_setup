@@ -1,0 +1,37 @@
+VERSION := 0.7.0
+NAME := consul-1
+
+include Makefile.vars
+
+define DOCKER_CMD :=
+docker run \
+--name $(NAME) \
+-e "VIRTUAL_HOST=$(consul_virtual_host)" \
+-e "VIRTUAL_PORT=$(consul_virtual_port)" \
+-p "8400:8400" \
+-p "8500:8500" \
+-p "53:53/udp" \
+-d \
+progrium/consul:$(VERSION) \
+-server -advertise $(consul_advertise_ip) -bootstrap-expect 1 -domain $(consul_domain) -dc $(consul_data_center) -recursor $(server_dns)
+endef
+
+include Makefile.help
+include Makefile.functions
+include Makefile.container
+
+.PHONY +: run rerun rm clean test restart bash
+
+run: _run ##@default Starts the container.
+
+rerun: _rerun ##@targets Stops and starts the container.
+
+rm: _rm ##@targets Stops and removes the container.
+
+clean: _clean ##@targets Stops and removes the container and removes all created files.
+
+test: _test ##@targets Tests if the container is running.
+	
+restart: _restart ##@targets Restarts the container.
+
+bash: test _bash ##@targets Executes the bash inside the running container.

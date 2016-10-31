@@ -1,0 +1,71 @@
+# The shell of the Makefile goals.
+SHELL := /bin/bash
+# The path of the weave tool.
+WEAVE := /usr/local/bin/weave
+# The default goal.
+.DEFAULT_GOAL := run
+# All of the goals mentioned below.
+.PHONY: _run _rerun _rm _clean _test _restart _bash _localuser _dataContainer _rm_dataContainer
+# The container name.
+#NAME :=
+# The data container name.
+NAME_DATA ?= $(NAME)-data
+# The docker command to create the container.
+#DOCKER_CMD :=
+# The docker command to create the data container.
+#DOCKER_DATA_CMD :=
+# The docker command to start the container.
+DOCKER_RUN ?= docker start $(NAME)
+
+# Checks if the container exists.
+container_exists = docker ps -a | egrep '^.*\s+$(NAME)$$'
+
+# Checks if the data container exists.
+data_container_exists = docker ps -a | egrep '^.*\s+$(NAME_DATA)$$'
+
+# Checks if the container is already running.
+container_running = docker ps | egrep '^.*\s+$(NAME)$$'
+
+_run:
+	if ! $(container_exists); then \
+	$(DOCKER_CMD); \
+	elif ! $(container_running); then \
+	$(DOCKER_RUN); \
+	fi
+
+_run_data:
+	if ! $(container_exists); then \
+	$(DOCKER_DATA_CMD); \
+	fi
+
+_rerun: rm run
+
+_rm:
+	if $(container_exists); then \
+	docker rm -f $(NAME); \
+	fi
+
+_rm_data:
+	if $(data_container_exists); then \
+	docker rm -f $(NAME_DATA); \
+	fi
+
+_stop:
+	if $(container_exists); then \
+	docker stop $(NAME); \
+	fi
+
+_clean: rm
+
+_test:
+	[ -n "`$(container_exists)`" ]
+	
+_restart: test
+	docker restart $(NAME)
+
+_bash:
+	docker exec -it $(NAME) bash
+	
+_containeruser:
+	$(call check_defined, CONTAINER_USER, The local user of the run container)
+	sudo useradd -rU $(CONTAINER_USER); true

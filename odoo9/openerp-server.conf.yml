@@ -1,0 +1,5 @@
+db:
+  host: postgres-9-4.service.consul.emwork.nttdata.com
+  port: 5432
+  user: odoo9
+  password: cai0iB1oon9vequabeithaishooTheej
