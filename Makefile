@@ -2,7 +2,9 @@ include Makefile.vars
 include Makefile.help
 include Makefile.functions
 
-.PHONY +: consul
+.PHONY +: all consul registrator postgresql odoo9 proxy clean info-ip-container
+
+all: consul registrator postgresql odoo9 proxy ##@default Starts Odoo 9 and all necessary dependencies.
 
 consul: ##@targets Starts the Consul container.
 	$(MAKE) Makefile.consul run
